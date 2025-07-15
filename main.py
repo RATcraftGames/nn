@@ -40,4 +40,3 @@ y := 20
 
 
     result = run_interpreter(ast)
-    print(result)
