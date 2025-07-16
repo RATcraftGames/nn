@@ -1,3 +1,4 @@
+import builtins
 from core.ast import *
 
 class Environment:
@@ -32,8 +33,24 @@ class Interpreter:
         self.setup_builtins()
 
     def setup_builtins(self):
+        def custom_input(prompt=""):
+            if hasattr(builtins, '_nn_idle_input_handler'):
+                return builtins._nn_idle_input_handler(prompt)
+            return input(prompt)
+        def custom_input_number(prompt=""):
+            if hasattr(builtins, '_nn_idle_input_number_handler'):
+                return builtins._nn_idle_input_number_handler(prompt)
+            while True:
+                value = input(prompt)
+                try:
+                    if '.' in value:
+                        return float(value)
+                    return int(value)
+                except Exception:
+                    continue
         self.global_env.set_func("print", lambda *args: print(*args))
-        self.global_env.set_func("input", lambda prompt="": input(prompt))
+        self.global_env.set_func("input", custom_input)
+        self.global_env.set_func("input_number", custom_input_number)
 
     def interpret(self, node, env=None):
         if env is None:
@@ -57,9 +74,7 @@ class Interpreter:
         elif isinstance(node, NnBinOp):
             left = self.interpret(node.left, env)
             right = self.interpret(node.right, env)
-            
             if node.op == '+':
-                # Если хотя бы один из операндов строка — приводим оба к строке
                 if isinstance(left, str) or isinstance(right, str):
                     return str(left) + str(right)
                 return left + right
@@ -126,11 +141,9 @@ class Interpreter:
                 params, body = func
                 if len(params) != len(node.args):
                     raise TypeError(f"Функция {node.name} ожидает {len(params)} аргументов, получено {len(node.args)}")
-                
                 new_env = Environment(env)
                 for param, arg in zip(params, node.args):
                     new_env.set_var(param, self.interpret(arg, env))
-                
                 return self.interpret(body, new_env)
 
         elif isinstance(node, NnReturn):
@@ -157,3 +170,4 @@ def run_interpreter(ast):
         return interpreter.interpret(ast)
     except ReturnValue as rv:
         return rv.value
+
