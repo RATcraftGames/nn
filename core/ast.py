@@ -56,12 +56,9 @@ class NnProgram:
         self.statements = statements
 
 def print_ast(node, indent=0):
-    """Печатает AST в читаемом виде"""
     if node is None:
         return
-    
     prefix = "  " * indent
-    
     if isinstance(node, NnProgram):
         print(f"{prefix}Program:")
         for stmt in node.statements:
