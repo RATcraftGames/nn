@@ -7,7 +7,6 @@ KEYWORDS = {'КРИКНИ', 'НАЧ', 'ЕСЛИ', 'ЧЁ', 'ТО', 'НА', 'ВС�
 
 TOKEN_SPECIFICATION = [
     ('NUMBER', r'\d+(\.\d*)?'),
-    # Теперь поддержка русских и латинских букв в идентификаторах
     ('ID', r'[a-zA-Zа-яА-ЯёЁ_][a-zA-Zа-яА-ЯёЁ_0-9]*'),
     ('OP', r'[:]=|==|!=|<=|>=|[+\-*/=<>]'),
     ('SKIP', r'[ \t]+'),
@@ -22,19 +21,15 @@ TOKEN_SPECIFICATION = [
     ('MISMATCH', r'.'),
 ]
 
-
 def lex(code):
     tok_regex = '|'.join(f'(?P<{name}>{pattern})' for name, pattern in TOKEN_SPECIFICATION)
-
     for match in re.finditer(tok_regex, code):
         kind = match.lastgroup
         value = match.group()
-
         if kind == 'NUMBER':
             value = float(value) if '.' in value else int(value)
             yield Token(kind, value)
         elif kind == 'ID':
-            # Проверяем составные ключевые слова
             if value.upper() in KEYWORDS:
                 token_type = value.upper()
             else:
