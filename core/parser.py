@@ -14,7 +14,6 @@ from core.ast import (
 )
 
 class Parser:
-
     def __init__(self, tokens):
         self.tokens = list(tokens)
         self.pos = 0
@@ -36,18 +35,15 @@ class Parser:
         if not (self.peek() and self.peek().type == 'НАЧ'):
             raise SyntaxError('Сунтах Ерор, не забывай, в начале скрипта ВСЕГДА должно быть НАЧ !')
         self.advance()
-
         statements = []
         while self.peek():
             statements.append(self.parse_statement())
-
         return NnProgram(statements)
 
     def parse_statement(self):
         tok = self.peek()
         if not tok:
             return None
-            
         if tok.type == 'ID':
             return self.parse_assignment()
         elif tok.type == 'КРИКНИ':
@@ -75,23 +71,19 @@ class Parser:
         return NnEcho(expr)
 
     def parse_if(self):
-        # Ожидаем 'ЕСЛИ' и 'ЧЁ' как отдельные токены
         self.expect('ЕСЛИ')
         self.expect('ЧЁ')
         condition = self.parse_expr()
         self.expect('ТО')
         then_body = self.parse_block()
-        
         else_body = None
         if self.peek() and self.peek().type == 'НА':
             self.expect('НА')
             self.expect('ВСЯКИЙ')
             else_body = self.parse_block()
-            
         return NnIf(condition, then_body, else_body)
 
     def parse_while(self):
-        # Ожидаем 'ДЕЛАЙ' и 'ПОКА' как отдельные токены
         self.expect('ДЕЛАЙ')
         self.expect('ПОКА')
         condition = self.parse_expr()
@@ -102,14 +94,12 @@ class Parser:
         self.expect('КУСОК')
         name = self.expect('ID').value
         self.expect('LPAREN')
-        
         params = []
         if self.peek() and self.peek().type == 'ID':
             params.append(self.expect('ID').value)
             while self.peek() and self.peek().type == 'COMMA':
                 self.expect('COMMA')
                 params.append(self.expect('ID').value)
-        
         self.expect('RPAREN')
         body = self.parse_block()
         return NnFunction(name, params, body)
@@ -187,13 +177,23 @@ class Parser:
         tok = self.peek()
         if not tok:
             raise SyntaxError("Неожиданный конец файла")
-            
         if tok.type == 'NUMBER':
             self.advance()
             return NnNumber(tok.value)
         elif tok.type == 'STRING':
             self.advance()
             return NnString(tok.value)
+        elif tok.type == 'СПРОСИКА':
+            self.advance()
+            if self.peek() and self.peek().type == 'LPAREN':
+                self.expect('LPAREN')
+                if self.peek() and self.peek().type == 'ID' and self.peek().value == 'число':
+                    self.expect('ID')
+                    self.expect('RPAREN')
+                    return NnCall('input_number', [])
+                else:
+                    raise SyntaxError('СПРОСИКА поддерживает только (число)')
+            return NnCall('input', [])
         elif tok.type == 'ID':
             name = self.expect('ID').value
             if self.peek() and self.peek().type == 'LPAREN':
